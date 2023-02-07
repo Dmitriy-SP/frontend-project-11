@@ -6,5 +6,5 @@ overrides: []
 parserOptions:
   ecmaVersion: latest
   sourceType: module
-rules: 
-  no-extraneous-dependencies
+rules:
+  'import/no-extraneous-dependencies'
