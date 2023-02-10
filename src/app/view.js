@@ -1,54 +1,18 @@
 import onChange from 'on-change';
 import * as yup from 'yup';
-import i18n from 'i18next';
-import locales from '../locales/index.js';
 import request from './request.js';
-import { renderFeedback, renderRSS } from './render.js';
-import addID from './funcaddid.js';
-import time from './timeout.js';
+import render, { renderFeedback } from './render.js';
+import addID, { hasAdded } from './utils.js';
+import watchingFeeds from './watchingFeeds.js';
 
 const schema = yup.string().url();
-
-const hasAdded = (state, newURL) => !state.feedList.every((feed) => feed.link !== newURL);
-
-const runLocales = async (ru) => await i18n.init({
-    lng: 'ru',
-    debug: true,
-    resources: {
-      ru,
-    },
-  });
-
-export const render = (state) => {
-  renderRSS(state);
-
-  document.querySelectorAll('a.link')
-    .forEach((link) => link.addEventListener('click', (e) => {
-      state.uiState.watchedLinks.push(e.target.href);
-      render(state);
-    }));
-
-  document.querySelectorAll('button.btn-sm')
-    .forEach((button) => button.addEventListener('click', (e) => {
-      e.preventDefault();
-      const post = state.postsList[e.target.getAttribute('data-id') - 1];
-      state.uiState.watchedLinks.push(post.link);
-      document.querySelector('h5.modal-title').textContent = post.title;
-      document.querySelector('div.modal-body').textContent = post.description;
-      document.querySelector('a.full-article').href = post.link;
-      render(state);
-  }));
-};
 
 export default (state) => {
   const form = document.querySelector('form');
   const inputURL = document.querySelector('#url-input');
   const watchedState = onChange(state, renderFeedback);
 
-  runLocales(locales.ru);
-
-  time(state);
-
+  watchingFeeds(state);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = inputURL.value;
