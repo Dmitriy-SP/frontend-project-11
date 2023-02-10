@@ -15,15 +15,18 @@ export default (state) => {
   watchingFeeds(state);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    inputURL.value = 'first';
     const url = inputURL.value;
     schema.isValid(url)
       .then((valid) => {
+        inputURL.value = 'second';
         if (valid) {
           if (hasAdded(state, url)) {
             watchedState.uiState.formStatus = 'added';
           } else {
             request(url)
               .then((data) => {
+                inputURL.value = 'third';
                 switch (data) {
                   case 'networkError':
                     watchedState.uiState.formStatus = 'networkError';
