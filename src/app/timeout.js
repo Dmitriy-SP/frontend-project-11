@@ -1,5 +1,5 @@
 import request from './request.js';
-import addID from './addid.js';
+import addID from './funcaddid.js';
 import { render } from './view.js';
 
 const hasPost = (state, newPost) => !state.postsList.every((post) => post.link !== newPost.link);

@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import locales from '../locales/index.js';
 import request from './request.js';
 import { renderFeedback, renderRSS } from './render.js';
-import addID from './addid.js';
+import addID from './funcaddid.js';
 import time from './timeout.js';
 
 const schema = yup.string().url();
