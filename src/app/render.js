@@ -6,7 +6,7 @@ const removeClass = (el, attr) => (el.classList.contains(attr) ? el.classList.re
 export const renderFeedback = (path, value) => {
     const inputURL = document.querySelector('#url-input');
     const feedback = document.querySelector('p.feedback');
-  
+
     switch (value) {
       case 'add':
         feedback.textContent = i18n.t('addURL');
@@ -35,12 +35,14 @@ export const renderFeedback = (path, value) => {
     addClass(inputURL, 'is-invalid');
 };
 
-const getLinkClasses = (postData) => postData.watched ? 'fw-normal link-secondary link' : 'fw-bold link';
+const watchedLink = (state, link) => !state.uiState.watchedLinks.every((watchedLink) => watchedLink !== link);
 
-const buildPostElement = (postData) => `<li class="list-group-item d-flex justify-content-between 
+const getLinkClasses = (state, postData) => watchedLink(state, postData.link) ? 'fw-normal link-secondary link' : 'fw-bold link';
+
+const buildPostElement = (state, postData) => `<li class="list-group-item d-flex justify-content-between 
   align-items-start border-0 border-end-0">
-  <a href="${postData.link}" class="${getLinkClasses(postData)}" target="_blank" rel="noopener noreferrer">${postData.title}</a>
-  <button type="button" class="btn btn-outline-primary btn-sm"data-bs-toggle="modal" data-bs-target="#modal">
+  <a href="${postData.link}" class="${getLinkClasses(state, postData)}" data-id="${postData.postID}" target="_blank" rel="noopener noreferrer">${postData.title}</a>
+  <button type="button" class="btn btn-outline-primary btn-sm"data-bs-toggle="modal" data-bs-target="#modal"  data-id="${postData.postID}">
   ${i18n.t('buttonText')}</button></li>`;
 
 const buildFeedElement = (feedData) => `<li class="list-group-item border-0 border-end-0">
@@ -60,7 +62,7 @@ export const renderRSS = (state) => {
 
   document.querySelector('#postTitle').textContent = i18n.t('postTitle');
   let posts = '';
-  state.postsList.forEach((post) => posts = `${posts}${buildPostElement(post)}`);
+  state.postsList.forEach((post) => posts = `${posts}${buildPostElement(state, post)}`);
   postList.innerHTML = '';
   postList.insertAdjacentHTML('afterbegin', posts);
 };
