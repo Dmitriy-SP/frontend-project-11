@@ -20,5 +20,4 @@ It allows you to add a large number of RSS feeds, updates them itself and adds n
 ```
 git clone git@github.com:Dmitriy-SP/frontend-project-11.git
 make install
-npm link
 ```
