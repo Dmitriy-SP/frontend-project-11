@@ -15,8 +15,8 @@ export default (state) => {
   watchingFeeds(state);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    inputURL.value = 'first';
     const url = inputURL.value;
+    inputURL.value = 'first';
     schema.isValid(url)
       .then((valid) => {
         inputURL.value = 'second';
