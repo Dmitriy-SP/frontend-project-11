@@ -2,7 +2,7 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import request from './request.js';
 import render, { renderFeedback } from './render.js';
-import addID, { hasAdded } from './utils.js';
+import addID, { hasAdded, hasPost } from './utils.js';
 import watchingFeeds from './watchingFeeds.js';
 
 const schema = yup.string().url();
@@ -31,13 +31,15 @@ export default (state) => {
                   case 'rssError':
                     watchedState.uiState.formStatus = 'unvalid';
                     return;
-                  default:
+                  default: {
                     inputURL.value = '';
                     addID(state, data);
                     state.feedList.push(data.feed);
-                    state.postsList = [...state.postsList, ...data.posts];
+                    const newPosts = data.posts.filter((post) => !hasPost(state, post));
+                    state.postsList = [...state.postsList, ...newPosts];
                     render(state);
                     watchedState.uiState.formStatus = 'add';
+                  }
                 }
               });
           }

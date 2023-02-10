@@ -10,10 +10,15 @@ const watchingFeeds = (state) => setTimeout(() => {
         case 'rssError':
           return;
         default: {
-          addID(state, data);
-          const newPosts = data.posts.filter((post) => !hasPost(state, post));
-          state.postsList = [...state.postsList, ...newPosts];
-          render(state);
+          const newPosts = {
+            feed,
+            posts: data.posts.filter((post) => !hasPost(state, post)),
+          };
+          if (newPosts.posts.length) {
+            addID(state, newPosts);
+            state.postsList = [...state.postsList, ...newPosts.posts];
+            render(state);
+          }
         }
       }
     }));
