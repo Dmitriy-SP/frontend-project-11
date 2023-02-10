@@ -5,15 +5,20 @@ import render from './render.js';
 const watchingFeeds = (state) => setTimeout(() => {
   state.feedList.forEach((feed) => request(feed.link)
     .then((data) => {
-      if (data !== 'networkError' && data !== 'rssError') {
-        const newPosts = {
-          feed,
-          posts: data.posts.filter((post) => !hasPost(state, post)),
-        };
-        if (newPosts.posts.length) {
-          addID(state, newPosts);
-          state.postsList = [...state.postsList, ...newPosts.posts];
-          render(state);
+      switch (data) {
+        case 'networkError':
+        case 'rssError':
+          return;
+        default: {
+          const newPosts = {
+            feed,
+            posts: data.posts.filter((post) => !hasPost(state, post)),
+          };
+          if (newPosts.posts.length) {
+            addID(state, newPosts);
+            state.postsList = [...state.postsList, ...newPosts.posts];
+            render(state);
+          }
         }
       }
     }));
