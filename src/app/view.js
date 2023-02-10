@@ -16,6 +16,7 @@ export default (state) => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = inputURL.value;
+    inputURL.value = '';
     schema.isValid(url)
       .then((valid) => {
         if (valid) {
