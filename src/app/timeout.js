@@ -15,7 +15,6 @@ const setTime = (state) => setTimeout(() => {
                     addID(state, data);
                     const newPosts = data.posts.filter((post) => !hasPost(state, post));
                     state.postsList = [...state.postsList, ...newPosts];
-                    console.log(state);
                     render(state);
             }
         }));
