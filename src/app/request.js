@@ -12,7 +12,7 @@ const parse = (response) => {
       const link = item.querySelector('link').textContent;
       const title = item.querySelector('title').textContent;
       const description = item.querySelector('description').textContent;
-      items.push({ link, title, description });
+      items.push({ link, title, description, watched: false });
     });
   return { 
     feed: { title: feedTitle, description: feedDescription, link: response.data.status.url},
