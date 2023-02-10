@@ -5,6 +5,7 @@ import locales from '../locales/index.js';
 import request from './request.js';
 import { renderFeedback, renderRSS } from './render.js';
 import addID from './addid.js';
+import time from './timeout.js';
 
 const schema = yup.string().url();
 
@@ -18,7 +19,7 @@ const runLocales = async (ru) => await i18n.init({
     },
   });
 
-const render = (state) => {
+export const render = (state) => {
   renderRSS(state);
 
   document.querySelectorAll('a.link')
@@ -45,6 +46,8 @@ export default (state) => {
   const watchedState = onChange(state, renderFeedback);
 
   runLocales(locales.ru);
+
+  time(state);
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
