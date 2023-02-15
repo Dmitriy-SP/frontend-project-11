@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 
 const addClass = (el, attr) => (!el.classList.contains(attr) ? el.classList.add(attr) : null);
-
 const removeClass = (el, attr) => (el.classList.contains(attr) ? el.classList.remove(attr) : null);
 
 const renderFeedback = (state) => {
@@ -10,11 +9,12 @@ const renderFeedback = (state) => {
 
   switch (state.uiState.formStatus) {
     case 'add':
+      inputURL.value = '';
       feedback.textContent = i18n.t('addURL');
       removeClass(feedback, 'text-danger');
       addClass(feedback, 'text-success');
       removeClass(inputURL, 'is-invalid');
-      return true;
+      return;
     case 'networkError':
       feedback.textContent = i18n.t('networkError');
       break;
@@ -27,13 +27,14 @@ const renderFeedback = (state) => {
     case 'noRSS':
       feedback.textContent = i18n.t('noRSS');
       break;
+    case 'waiting':
+      return;
     default:
       throw new Error('error in state.urlStatus - unavaillable status');
   }
   removeClass(feedback, 'text-success');
   addClass(feedback, 'text-danger');
   addClass(inputURL, 'is-invalid');
-  return false;
 };
 
 const watchedLink = (state, link) => !state.uiState.watchedLinks
@@ -74,7 +75,8 @@ const renderRSS = (state) => {
 };
 
 const render = (state) => {
-  if (renderFeedback(state)) {
+  renderFeedback(state);
+  if (state.postsList.length) {
     renderRSS(state);
 
     document.querySelectorAll('a.link')

@@ -21,8 +21,9 @@ export default () => {
   const state = {
     feedList: [],
     postsList: [],
+    hasNewPosts: false,
     uiState: {
-      formStatus: '',
+      formStatus: 'waiting',
       watchedLinks: [],
     },
   };
@@ -32,7 +33,10 @@ export default () => {
       const form = document.querySelector('form');
       const inputURL = document.querySelector('#url-input');
 
-      const watchedState = onChange(state, () => render(state));
+      const watchedState = onChange(state, (path, value) => {
+        render(state, value);
+        state.uiState.formStatus = 'waiting';
+      });
       watchingFeeds(state);
 
       form.addEventListener('submit', (e) => {
@@ -49,12 +53,11 @@ export default () => {
                     switch (data) {
                       case 'networkError':
                         watchedState.uiState.formStatus = 'networkError';
-                        return;
+                        break;
                       case 'rssError':
                         watchedState.uiState.formStatus = 'unvalid';
-                        return;
+                        break;
                       default: {
-                        inputURL.value = '';
                         addID(state, data);
                         state.feedList.push(data.feed);
                         const newPosts = data.posts.filter((post) => !hasPost(state, post));
