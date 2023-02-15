@@ -21,7 +21,6 @@ export default () => {
   const state = {
     feedList: [],
     postsList: [],
-    hasNewPosts: false,
     uiState: {
       formStatus: 'waiting',
       watchedLinks: [],
