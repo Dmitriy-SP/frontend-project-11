@@ -4,17 +4,17 @@ const addClass = (el, attr) => (!el.classList.contains(attr) ? el.classList.add(
 
 const removeClass = (el, attr) => (el.classList.contains(attr) ? el.classList.remove(attr) : null);
 
-const renderFeedback = (path, value) => {
+const renderFeedback = (state) => {
   const inputURL = document.querySelector('#url-input');
   const feedback = document.querySelector('p.feedback');
 
-  switch (value) {
+  switch (state.uiState.formStatus) {
     case 'add':
       feedback.textContent = i18n.t('addURL');
       removeClass(feedback, 'text-danger');
       addClass(feedback, 'text-success');
       removeClass(inputURL, 'is-invalid');
-      return;
+      return true;
     case 'networkError':
       feedback.textContent = i18n.t('networkError');
       break;
@@ -33,6 +33,7 @@ const renderFeedback = (path, value) => {
   removeClass(feedback, 'text-success');
   addClass(feedback, 'text-danger');
   addClass(inputURL, 'is-invalid');
+  return false;
 };
 
 const watchedLink = (state, link) => !state.uiState.watchedLinks
@@ -73,25 +74,26 @@ const renderRSS = (state) => {
 };
 
 const render = (state) => {
-  renderRSS(state);
+  if (renderFeedback(state)) {
+    renderRSS(state);
 
-  document.querySelectorAll('a.link')
-    .forEach((link) => link.addEventListener('click', (e) => {
-      state.uiState.watchedLinks.push(e.target.href);
-      render(state);
-    }));
+    document.querySelectorAll('a.link')
+      .forEach((link) => link.addEventListener('click', (e) => {
+        state.uiState.watchedLinks.push(e.target.href);
+        render(state);
+      }));
 
-  document.querySelectorAll('button.btn-sm')
-    .forEach((button) => button.addEventListener('click', (e) => {
-      e.preventDefault();
-      const post = state.postsList[e.target.getAttribute('data-id') - 1];
-      state.uiState.watchedLinks.push(post.link);
-      document.querySelector('h5.modal-title').textContent = post.title;
-      document.querySelector('div.modal-body').textContent = post.description;
-      document.querySelector('a.full-article').href = post.link;
-      render(state);
-    }));
+    document.querySelectorAll('button.btn-sm')
+      .forEach((button) => button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const post = state.postsList[e.target.getAttribute('data-id') - 1];
+        state.uiState.watchedLinks.push(post.link);
+        document.querySelector('h5.modal-title').textContent = post.title;
+        document.querySelector('div.modal-body').textContent = post.description;
+        document.querySelector('a.full-article').href = post.link;
+        render(state);
+      }));
+  }
 };
 
 export default render;
-export { renderFeedback };
