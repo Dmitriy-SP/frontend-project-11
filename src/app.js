@@ -36,8 +36,8 @@ export default () => {
         render(state, value);
         state.uiState.formStatus = 'waiting';
       });
-      watchingFeeds(state);
 
+      watchingFeeds(state);
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const url = inputURL.value;
