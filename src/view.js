@@ -1,3 +1,4 @@
+/*
 import onChange from 'on-change';
 import * as yup from 'yup';
 import request from './request.js';
@@ -49,3 +50,4 @@ export default (state) => {
       });
   });
 };
+*/
