@@ -76,25 +76,16 @@ const renderRSS = (state) => {
 
 const render = (state) => {
   renderFeedback(state);
+
   if (state.postsList.length) {
     renderRSS(state);
+  }
 
-    document.querySelectorAll('a.link')
-      .forEach((link) => link.addEventListener('click', (e) => {
-        state.uiState.watchedLinks.push(e.target.href);
-        render(state);
-      }));
-
-    document.querySelectorAll('button.btn-sm')
-      .forEach((button) => button.addEventListener('click', (e) => {
-        e.preventDefault();
-        const post = state.postsList[e.target.getAttribute('data-id') - 1];
-        state.uiState.watchedLinks.push(post.link);
-        document.querySelector('h5.modal-title').textContent = post.title;
-        document.querySelector('div.modal-body').textContent = post.description;
-        document.querySelector('a.full-article').href = post.link;
-        render(state);
-      }));
+  if (state.uiState.modalPostId) {
+    const post = state.postsList[state.uiState.modalPostId];
+    document.querySelector('h5.modal-title').textContent = post.title;
+    document.querySelector('div.modal-body').textContent = post.description;
+    document.querySelector('a.full-article').href = post.link;
   }
 };
 
