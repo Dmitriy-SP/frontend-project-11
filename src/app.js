@@ -21,24 +21,22 @@ const addID = (state, data) => {
   });
 };
 
-const loadData = (url, watchedState, state) => {
-  axios.get(addProxy(url))
-    .then((response) => parse(response))
-    .then((data) => {
-      addID(state, data);
-      state.feedList.push(data.feed);
-      const newPosts = data.posts.filter((post) => !hasPost(state, post));
-      state.postsList = [...state.postsList, ...newPosts];
-      watchedState.uiState.formStatus = 'waiting';
-      watchedState.uiState.formStatus = 'add';
-    })
-    .catch((error) => {
-      if (error.request) {
-        throw new Error('networkError');
-      }
-      throw new Error('noRSS');
-    });
-};
+const loadData = (url, watchedState, state) => axios.get(addProxy(url))
+  .then((response) => parse(response))
+  .then((data) => {
+    addID(state, data);
+    state.feedList.push(data.feed);
+    const newPosts = data.posts.filter((post) => !hasPost(state, post));
+    state.postsList = [...state.postsList, ...newPosts];
+    watchedState.uiState.formStatus = 'waiting';
+    watchedState.uiState.formStatus = 'add';
+  })
+  .catch((error) => {
+    if (error.request) {
+      throw new Error('networkError');
+    }
+    throw new Error('noRSS');
+  });
 
 const updateData = (watchedState) => setTimeout(() => {
   watchedState.feedList.forEach((feed) => axios.get(addProxy(feed))
@@ -91,21 +89,7 @@ export default () => {
         const formData = new FormData(e.target);
         const { url } = Object.fromEntries(formData);
         schema.validate(url)
-          .then(() => {
-            try {
-              loadData(url, watchedState, state);
-            } catch (error) {
-              switch (error.message) {
-                case 'networkError':
-                  watchedState.uiState.formStatus = 'networkError';
-                  break;
-                case 'noRSS':
-                  watchedState.uiState.formStatus = 'noRSS';
-                  break;
-                default:
-              }
-            }
-          })
+          .then(() => loadData(url, watchedState, state))
           .catch((error) => {
             switch (error.message) {
               case 'unvalid':
@@ -113,6 +97,12 @@ export default () => {
                 break;
               case 'added':
                 watchedState.uiState.formStatus = 'added';
+                break;
+              case 'networkError':
+                watchedState.uiState.formStatus = 'networkError';
+                break;
+              case 'noRSS':
+                watchedState.uiState.formStatus = 'noRSS';
                 break;
               default:
             }
