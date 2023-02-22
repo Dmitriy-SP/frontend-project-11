@@ -79,7 +79,7 @@ export default () => {
       const schema = yup.string('unvalid').url('unvalid').test(
         'unique',
         'added',
-        (value) => state.feedList.every((feed) => feed.link !== value),
+        (newLink) => state.feedList.every((feed) => feed.link !== newLink),
       );
 
       const watchedState = onChange(state, (path, value) => render(state, value));
