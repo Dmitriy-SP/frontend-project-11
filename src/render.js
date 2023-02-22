@@ -37,8 +37,8 @@ const renderFeedback = (state) => {
   addClass(inputURL, 'is-invalid');
 };
 
-const watchedLink = (state, link) => !state.uiState.watchedLinks
-  .every((stateLink) => stateLink !== link);
+const watchedLink = (state, link) => !state.uiState.watchedPosts
+  .every((post) => post.link !== link);
 
 const getLinkClasses = (state, postData) => (watchedLink(state, postData.link) ? 'fw-normal link-secondary link' : 'fw-bold link');
 
@@ -82,7 +82,7 @@ const render = (state) => {
   }
 
   if (state.uiState.modalPostId) {
-    const post = state.postsList[state.uiState.modalPostId];
+    const post = state.postsList[state.uiState.modalPostId - 1];
     document.querySelector('h5.modal-title').textContent = post.title;
     document.querySelector('div.modal-body').textContent = post.description;
     document.querySelector('a.full-article').href = post.link;

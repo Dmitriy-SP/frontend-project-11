@@ -4,10 +4,11 @@ import * as yup from 'yup';
 import axios from 'axios';
 import locales from './locales/index.js';
 import render from './render.js';
-
-const hasAdded = (state, newURL) => !state.feedList.every((feed) => feed.link !== newURL);
+import parse from './parser.js';
 
 const hasPost = (state, newPost) => !state.postsList.every((post) => post.link !== newPost.link);
+
+const addProxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
 const addID = (state, data) => {
   const lastFeedID = state.feedList.length ? state.feedList[state.feedList.length - 1].id : 0;
@@ -20,39 +21,28 @@ const addID = (state, data) => {
   });
 };
 
-const parse = (response) => {
-  const parser = new DOMParser();
-  const data = parser.parseFromString(response.data.contents, 'application/xml');
-  const feedTitle = data.querySelector('title').textContent;
-  const feedDescription = data.querySelector('description').textContent;
-
-  const items = [];
-  data.querySelectorAll('item')
-    .forEach((item) => {
-      const link = item.querySelector('link').textContent;
-      const title = item.querySelector('title').textContent;
-      const description = item.querySelector('description').textContent;
-      items.push({ title, description, link });
+const loadData = (url, watchedState, state) => {
+  axios.get(addProxy(url))
+    .then((response) => parse(response))
+    .then((data) => {
+      addID(state, data);
+      state.feedList.push(data.feed);
+      const newPosts = data.posts.filter((post) => !hasPost(state, post));
+      state.postsList = [...state.postsList, ...newPosts];
+      watchedState.uiState.formStatus = 'waiting';
+      watchedState.uiState.formStatus = 'add';
+    })
+    .catch((error) => {
+      if (error.request) {
+        throw new Error('networkError');
+      }
+      throw new Error('noRSS');
     });
-  return {
-    feed: { title: feedTitle, description: feedDescription, link: response.data.status.url },
-    posts: items,
-  };
 };
 
-const request = (url) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
-  .then((response) => {
-    if (response.status !== 200) {
-      throw new Error('networkError');
-    }
-    if (response.data.status.http_code !== 200) {
-      throw new Error('rssError');
-    }
-    return parse(response);
-  });
-
-const watchingFeeds = (watchedState) => setTimeout(() => {
-  watchedState.feedList.forEach((feed) => request(feed.link)
+const updateData = (watchedState) => setTimeout(() => {
+  watchedState.feedList.forEach((feed) => axios.get(addProxy(feed))
+    .then((response) => parse(response))
     .then((data) => {
       const newPosts = {
         feed,
@@ -64,7 +54,7 @@ const watchingFeeds = (watchedState) => setTimeout(() => {
       }
     })
     .catch(() => {}));
-  return watchingFeeds(watchedState);
+  return updateData(watchedState);
 }, 5000);
 
 export default () => {
@@ -73,7 +63,7 @@ export default () => {
     postsList: [],
     uiState: {
       formStatus: 'waiting',
-      watchedLinks: [],
+      watchedPosts: [],
       modalPostId: null,
     },
   };
@@ -86,61 +76,55 @@ export default () => {
   })
     .then(() => {
       const form = document.querySelector('form');
-      const inputURL = document.querySelector('#url-input');
       const postsField = document.querySelector('#posts');
-      const schema = yup.string().url();
+
+      const schema = yup.string('unvalid').url('unvalid').test(
+        'unique',
+        'added',
+        (value) => state.feedList.every((feed) => feed.link !== value),
+      );
 
       const watchedState = onChange(state, (path, value) => render(state, value));
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const url = inputURL.value;
+        const formData = new FormData(e.target);
+        const { url } = Object.fromEntries(formData);
         schema.validate(url)
           .then(() => {
-            if (hasAdded(state, url)) {
-              watchedState.uiState.formStatus = 'added';
-              return;
+            try {
+              loadData(url, watchedState, state);
+            } catch (error) {
+              switch (error.message) {
+                case 'networkError':
+                  watchedState.uiState.formStatus = 'networkError';
+                  break;
+                case 'noRSS':
+                  watchedState.uiState.formStatus = 'noRSS';
+                  break;
+                default:
+              }
             }
-            request(url)
-              .then((data) => {
-                addID(state, data);
-                state.feedList.push(data.feed);
-                const newPosts = data.posts.filter((post) => !hasPost(state, post));
-                state.postsList = [...state.postsList, ...newPosts];
-                watchedState.uiState.formStatus = 'waiting';
-                watchedState.uiState.formStatus = 'add';
-              });
           })
           .catch((error) => {
-            switch (error) {
-              case 'networkError':
-                watchedState.uiState.formStatus = 'networkError';
+            switch (error.message) {
+              case 'unvalid':
+                watchedState.uiState.formStatus = 'unvalid';
                 break;
-              case 'rssError':
-                watchedState.uiState.formStatus = 'noRSS';
+              case 'added':
+                watchedState.uiState.formStatus = 'added';
                 break;
               default:
-                watchedState.uiState.formStatus = 'unvalid';
             }
           });
       });
 
       postsField.addEventListener('click', (e) => {
-        switch (e.target.localName) {
-          case 'a':
-            watchedState.uiState.watchedLinks.push(e.target.getAttribute('href'));
-            break;
-          case 'button': {
-            const post = state.postsList[e.target.getAttribute('data-id') - 1];
-            watchedState.uiState.watchedLinks.push(post.link);
-            watchedState.uiState.modalPostId = post.postID;
-            watchedState.uiState.modalPostId = null;
-            break;
-          }
-          default:
-        }
+        const post = state.postsList[e.target.getAttribute('data-id') - 1];
+        watchedState.uiState.watchedPosts.push(post);
+        watchedState.uiState.modalPostId = post.postID;
       });
 
-      watchingFeeds(watchedState);
+      updateData(watchedState);
     });
 };
