@@ -59,7 +59,7 @@ const renderRSS = (state) => {
 
   document.querySelector('#feedTitle').textContent = i18n.t('feedTitle');
   let feeds = '';
-  state.feedList.forEach((feed) => {
+  state.feeds.forEach((feed) => {
     feeds = `${feeds}${buildFeedElement(feed)}`;
   });
   feedList.innerHTML = '';
@@ -67,7 +67,7 @@ const renderRSS = (state) => {
 
   document.querySelector('#postTitle').textContent = i18n.t('postTitle');
   let posts = '';
-  state.postsList.forEach((post) => {
+  state.posts.forEach((post) => {
     posts = `${posts}${buildPostElement(state, post)}`;
   });
   postList.innerHTML = '';
@@ -77,15 +77,14 @@ const renderRSS = (state) => {
 const render = (state) => {
   renderFeedback(state);
 
-  if (state.postsList.length) {
+  if (state.posts.length) {
     renderRSS(state);
   }
 
-  if (state.uiState.modalPostId) {
-    const post = state.postsList[state.uiState.modalPostId - 1];
-    document.querySelector('h5.modal-title').textContent = post.title;
-    document.querySelector('div.modal-body').textContent = post.description;
-    document.querySelector('a.full-article').href = post.link;
+  if (state.uiState.modalPost) {
+    document.querySelector('h5.modal-title').textContent = state.uiState.modalPost.title;
+    document.querySelector('div.modal-body').textContent = state.uiState.modalPost.description;
+    document.querySelector('a.full-article').href = state.uiState.modalPost.link;
   }
 };
 
