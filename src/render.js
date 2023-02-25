@@ -1,8 +1,5 @@
 import i18n from 'i18next';
 
-const addClass = (el, attr) => (!el.classList.contains(attr) ? el.classList.add(attr) : null);
-const removeClass = (el, attr) => (el.classList.contains(attr) ? el.classList.remove(attr) : null);
-
 const renderFeedback = (state) => {
   const inputURL = document.querySelector('#url-input');
   const feedback = document.querySelector('p.feedback');
@@ -11,9 +8,9 @@ const renderFeedback = (state) => {
     case 'add':
       inputURL.value = '';
       feedback.textContent = i18n.t('addURL');
-      removeClass(feedback, 'text-danger');
-      addClass(feedback, 'text-success');
-      removeClass(inputURL, 'is-invalid');
+      feedback.classList.remove('text-danger');
+      feedback.classList.add('text-success');
+      inputURL.classList.remove('is-invalid');
       return;
     case 'networkError':
       feedback.textContent = i18n.t('networkError');
@@ -32,9 +29,9 @@ const renderFeedback = (state) => {
     default:
       throw new Error('error in state.urlStatus - unavaillable status');
   }
-  removeClass(feedback, 'text-success');
-  addClass(feedback, 'text-danger');
-  addClass(inputURL, 'is-invalid');
+  feedback.classList.remove('text-success');
+  feedback.classList.add('text-danger');
+  inputURL.classList.add('is-invalid');
 };
 
 const watchedLink = (state, link) => !state.uiState.watchedPosts

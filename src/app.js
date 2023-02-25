@@ -7,38 +7,20 @@ import locales from './locales/index.js';
 import render from './render.js';
 import parse from './parser.js';
 
-const addProxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+const addProxy = (url) => {
+  const urlWithProxy = new URL('https://allorigins.hexlet.app/get');
+  urlWithProxy.searchParams.append('disableCache', 'true');
+  urlWithProxy.searchParams.append('url', url);
+  return urlWithProxy;
+};
 
 const buildData = (response, currentFeedID) => {
-  const data = parse(response.data.contents, 'application/xml');
-  const feedTitle = data.querySelector('title').textContent;
-  const feedDescription = data.querySelector('description').textContent;
+  const data = parse(response.data.contents);
   const feedID = currentFeedID ?? _.uniqueId();
-
-  const items = [];
-  data.querySelectorAll('item')
-    .forEach((item) => {
-      const link = item.querySelector('link').textContent;
-      const title = item.querySelector('title').textContent;
-      const description = item.querySelector('description').textContent;
-      items.push({
-        title,
-        description,
-        link,
-        feedID,
-        postID: _.uniqueId(),
-      });
-    });
-
-  return {
-    feed: {
-      title: feedTitle,
-      description: feedDescription,
-      link: response.data.status.url,
-      id: feedID,
-    },
-    posts: items,
-  };
+  data.feed.id = feedID;
+  data.feed.link = response.data.status.url;
+  data.posts.map((post) => _.extend(post, { feedID, postID: _.uniqueId() }));
+  return data;
 };
 
 const loadData = (url, watchedState) => axios.get(addProxy(url))
@@ -46,8 +28,6 @@ const loadData = (url, watchedState) => axios.get(addProxy(url))
     const data = buildData(response);
     watchedState.posts = [...watchedState.posts, ...data.posts];
     watchedState.feeds.push(data.feed);
-    watchedState.feedLinks.push(data.feed.link);
-    watchedState.uiState.formStatus = 'waiting';
     watchedState.uiState.formStatus = 'add';
   })
   .catch((error) => {
@@ -61,32 +41,27 @@ const loadData = (url, watchedState) => axios.get(addProxy(url))
   });
 
 const updateData = (watchedState) => setTimeout(() => {
-  watchedState.feeds.forEach((feed) => axios.get(addProxy(feed.link))
-    .then((response) => {
-      const data = buildData(response, feed.id);
-      const addedFeedPosts = watchedState.posts.filter((post) => post.feedID === feed.id);
-      const newPosts = data.posts.filter((post) => addedFeedPosts
-        .every((addedPost) => addedPost.link !== post.link));
-      if (newPosts.posts.length) {
-        watchedState.posts = [...watchedState.posts, ...newPosts];
-      }
-    })
-    .then(() => updateData(watchedState))
-    .catch((error) => {
-      if (error.isAxiosError) {
-        throw new Error('networkError');
-      }
-      if (error.isParsingError) {
-        throw new Error('noRSS');
-      }
-      throw new Error('unknownError');
-    }));
+  const promises = watchedState.feeds.map((feed) => new Promise((resolve) => {
+    axios.get(addProxy(feed.link))
+      .then((response) => {
+        const data = buildData(response, feed.id);
+        const addedFeedPosts = watchedState.posts.filter((post) => post.feedID === feed.id);
+        const newPosts = data.posts.filter((post) => addedFeedPosts
+          .every((addedPost) => addedPost.link !== post.link));
+        if (newPosts.length) {
+          watchedState.posts = [...watchedState.posts, ...newPosts];
+        }
+        resolve(true);
+      })
+      .catch(() => {});
+  }));
+
+  Promise.all(promises).then(() => updateData(watchedState));
 }, 5000);
 
 export default () => {
   const state = {
     feeds: [],
-    feedLinks: [],
     posts: [],
     uiState: {
       formStatus: 'waiting',
@@ -105,7 +80,7 @@ export default () => {
       const form = document.querySelector('form');
       const postsField = document.querySelector('#posts');
 
-      const schema = yup.string('unvalid').notOneOf([state.feedLinks], 'added').url('unvalid');
+      const schema = yup.lazy(() => yup.string('unvalid').notOneOf([state.feeds.map((feed) => feed.link)], 'added').url('unvalid'));
 
       const watchedState = onChange(state, (path, value) => render(state, value));
 
