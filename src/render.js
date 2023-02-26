@@ -12,26 +12,34 @@ const renderFeedback = (state) => {
       feedback.classList.add('text-success');
       inputURL.classList.remove('is-invalid');
       return;
-    case 'networkError':
-      feedback.textContent = i18n.t('networkError');
-      break;
-    case 'unvalid':
-      feedback.textContent = i18n.t('unvalidURL');
-      break;
-    case 'added':
-      feedback.textContent = i18n.t('addedURL');
-      break;
-    case 'noRSS':
-      feedback.textContent = i18n.t('noRSS');
-      break;
+    case 'failed':
+      switch (state.error) {
+        case 'networkError':
+          feedback.textContent = i18n.t('networkError');
+          break;
+        case 'unvalid':
+          feedback.textContent = i18n.t('unvalidURL');
+          break;
+        case 'added':
+          feedback.textContent = i18n.t('addedURL');
+          break;
+        case 'noRSS':
+          feedback.textContent = i18n.t('noRSS');
+          break;
+        case 'none':
+          return;
+        default:
+          throw new Error('error in state.error - unavaillable error');
+      }
+      feedback.classList.remove('text-success');
+      feedback.classList.add('text-danger');
+      inputURL.classList.add('is-invalid');
+      return;
     case 'waiting':
       return;
     default:
-      throw new Error('error in state.urlStatus - unavaillable status');
+      throw new Error('error in state.uiState.formStatus - unavaillable status');
   }
-  feedback.classList.remove('text-success');
-  feedback.classList.add('text-danger');
-  inputURL.classList.add('is-invalid');
 };
 
 const watchedLink = (state, link) => !state.uiState.watchedPosts

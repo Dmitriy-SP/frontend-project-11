@@ -14,53 +14,51 @@ const addProxy = (url) => {
   return urlWithProxy;
 };
 
-const buildData = (response, currentFeedID) => {
-  const data = parse(response.data.contents);
-  const feedID = currentFeedID ?? _.uniqueId();
-  data.feed.id = feedID;
-  data.feed.link = response.data.status.url;
-  data.posts.map((post) => _.extend(post, { feedID, postID: _.uniqueId() }));
-  return data;
-};
-
 const loadData = (url, watchedState) => axios.get(addProxy(url))
   .then((response) => {
-    const data = buildData(response);
+    const data = parse(response.data.contents);
+    data.feed.id = _.uniqueId();
+    data.feed.link = url;
+    data.posts.map((post) => _.extend(post, { feedID: data.feed.id, postID: _.uniqueId() }));
     watchedState.posts = [...watchedState.posts, ...data.posts];
     watchedState.feeds.push(data.feed);
     watchedState.uiState.formStatus = 'add';
+    watchedState.error = 'none';
   })
   .catch((error) => {
     if (error.isAxiosError) {
-      throw new Error('networkError');
+      watchedState.uiState.formStatus = 'failed';
+      watchedState.error = 'networkError';
+      return;
     }
     if (error.isParsingError) {
-      throw new Error('noRSS');
+      watchedState.uiState.formStatus = 'failed';
+      watchedState.error = 'noRSS';
+      return;
     }
-    throw new Error('unknownError');
+    watchedState.uiState.formStatus = 'failed';
+    watchedState.error = 'unknownError';
   });
 
 const updateData = (watchedState) => setTimeout(() => {
-  const promises = watchedState.feeds.map((feed) => new Promise((resolve) => {
-    axios.get(addProxy(feed.link))
-      .then((response) => {
-        const data = buildData(response, feed.id);
-        const addedFeedPosts = watchedState.posts.filter((post) => post.feedID === feed.id);
-        const newPosts = data.posts.filter((post) => addedFeedPosts
-          .every((addedPost) => addedPost.link !== post.link));
-        if (newPosts.length) {
-          watchedState.posts = [...watchedState.posts, ...newPosts];
-        }
-        resolve(true);
-      })
-      .catch(() => {});
-  }));
+  const promises = watchedState.feeds.map((feed) => axios.get(addProxy(feed.link))
+    .then((response) => {
+      const data = parse(response.data.contents);
+      const addedFeedPosts = watchedState.posts.filter((post) => post.feedID === feed.id);
+      const newPosts = data.posts.filter((post) => addedFeedPosts
+        .every((addedPost) => addedPost.link !== post.link));
+      if (newPosts.length) {
+        newPosts.map((post) => _.extend(post, { feedID: feed.id, postID: _.uniqueId() }));
+        watchedState.posts = [...watchedState.posts, ...newPosts];
+      }
+    })
+    .catch(() => {}));
 
-  Promise.all(promises).then(() => updateData(watchedState));
+  Promise.all(promises).finally(() => updateData(watchedState));
 }, 5000);
 
 export default () => {
-  const state = {
+  const initialState = {
     feeds: [],
     posts: [],
     uiState: {
@@ -68,6 +66,7 @@ export default () => {
       watchedPosts: [],
       modalPost: {},
     },
+    error: 'none',
   };
 
   i18n.init({
@@ -80,43 +79,39 @@ export default () => {
       const form = document.querySelector('form');
       const postsField = document.querySelector('#posts');
 
-      const schema = yup.lazy(() => yup.string('unvalid').notOneOf([state.feeds.map((feed) => feed.link)], 'added').url('unvalid'));
+      const watchedState = onChange(initialState, (path, value) => render(initialState, value));
 
-      const watchedState = onChange(state, (path, value) => render(state, value));
+      const schema = yup.lazy(() => yup.string('unvalid').notOneOf([watchedState.feeds.map((feed) => feed.link)], 'added').url('unvalid'));
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
         schema.validate(url)
-          .then(() => loadData(url, watchedState, state))
+          .then(() => loadData(url, watchedState))
           .catch((error) => {
             switch (error.message) {
               case 'unvalid':
-                watchedState.uiState.formStatus = 'unvalid';
+                watchedState.uiState.formStatus = 'failed';
+                watchedState.error = 'unvalid';
                 break;
               case 'added':
-                watchedState.uiState.formStatus = 'added';
-                break;
-              case 'networkError':
-                watchedState.uiState.formStatus = 'networkError';
-                break;
-              case 'noRSS':
-                watchedState.uiState.formStatus = 'noRSS';
-                break;
-              case 'unknownError':
-                watchedState.uiState.formStatus = 'unknownError';
+                watchedState.uiState.formStatus = 'failed';
+                watchedState.error = 'added';
                 break;
               default:
+                throw new Error('error in schema.validate - unavaillable error');
             }
           });
       });
 
       postsField.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
-        const post = state.posts.filter((statePost) => statePost.postID === id)[0];
-        watchedState.uiState.watchedPosts.push(post);
-        watchedState.uiState.modalPost = post;
+        if (id) {
+          const post = watchedState.posts.filter((statePost) => statePost.postID === id)[0];
+          watchedState.uiState.watchedPosts.push(post);
+          watchedState.uiState.modalPost = post;
+        }
       });
 
       updateData(watchedState);
