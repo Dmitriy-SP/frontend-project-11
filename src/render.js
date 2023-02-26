@@ -45,7 +45,7 @@ const renderFeedback = (state) => {
 const watchedLink = (state, link) => !state.uiState.watchedPosts
   .every((post) => post.link !== link);
 
-const getLinkClasses = (state, postData) => (watchedLink(state, postData.link) ? 'fw-normal link-secondary link' : 'fw-bold link');
+const getLinkClasses = (state, postData) => (watchedLink(state, postData.link) ? 'fw-normal link-secondary' : 'fw-bold');
 
 const buildPostElement = (state, postData) => `<li class="list-group-item d-flex justify-content-between 
   align-items-start border-0 border-end-0">
