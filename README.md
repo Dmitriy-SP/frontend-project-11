@@ -9,15 +9,31 @@ Rss Reader is a service for aggregating RSS feeds, with which it is convenient t
 
 - [Description](#Description)
 - [Installation](#Installation)
+- [Usage](#Usage)
 
 ## Description
 
-Rss Reader is a service for aggregating RSS feeds, with which it is convenient to read sources, such as blogs.
-It allows you to add a large number of RSS feeds, updates them itself and adds new entries to the general feed.
+This service allows you to add an unlimited number of RSS feeds, updates them automatically and adds new posts to the general newsline.
+Subscribing to RSS feeds can allow a user to keep track of many different websites in a single news aggregator, which constantly monitor sites for new content, removing the need for the user to manually check them.
+Post description preview enabled via modal window.
 
 ## Installation
 
 ```
 git clone git@github.com:Dmitriy-SP/frontend-project-11.git
 make install
+```
+
+## Usage
+
+Deploy local server:
+
+```
+$ make develop
+```
+
+Build production:
+
+```
+$ make build
 ```

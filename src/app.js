@@ -24,8 +24,8 @@ const loadData = (url, watchedState) => {
       data.feed.id = _.uniqueId();
       data.feed.link = url;
       data.posts.map((post) => _.extend(post, { feedID: data.feed.id, postID: _.uniqueId() }));
-      watchedState.posts = [...watchedState.posts, ...data.posts];
-      watchedState.feeds.push(data.feed);
+      watchedState.posts = [...data.posts, ...watchedState.posts];
+      watchedState.feeds = [data.feed, ...watchedState.feeds];
       watchedState.formStatus = 'add';
       watchedState.error = null;
     })
@@ -54,7 +54,7 @@ const updateData = (watchedState) => setTimeout(() => {
         .every((addedPost) => addedPost.link !== post.link));
       if (newPosts.length) {
         newPosts.map((post) => _.extend(post, { feedID: feed.id, postID: _.uniqueId() }));
-        watchedState.posts = [...watchedState.posts, ...newPosts];
+        watchedState.posts = [...newPosts, ...watchedState.posts];
       }
     })
     .catch(() => {}));
@@ -72,11 +72,11 @@ export default () => {
     feeds: [],
     posts: [],
     formStatus: 'waiting',
+    error: null,
     uiState: {
       watchedPosts: [],
       modalPostID: null,
     },
-    error: null,
   };
 
   const i18nInstance = i18n.createInstance();
