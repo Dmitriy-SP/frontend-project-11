@@ -1,17 +1,16 @@
-const renderError = (state, i18nInstance) => {
-  const feedback = document.querySelector('p.feedback');
+const renderError = (state, elements, i18nInstance) => {
   switch (state.error) {
     case 'networkError':
-      feedback.textContent = i18nInstance.t('networkError');
+      elements.feedback.textContent = i18nInstance.t('networkError');
       break;
     case 'unvalid':
-      feedback.textContent = i18nInstance.t('unvalidURL');
+      elements.feedback.textContent = i18nInstance.t('unvalidURL');
       break;
     case 'added':
-      feedback.textContent = i18nInstance.t('addedURL');
+      elements.feedback.textContent = i18nInstance.t('addedURL');
       break;
     case 'noRSS':
-      feedback.textContent = i18nInstance.t('noRSS');
+      elements.feedback.textContent = i18nInstance.t('noRSS');
       break;
     case null:
       return;
@@ -20,95 +19,113 @@ const renderError = (state, i18nInstance) => {
   }
 };
 
-const renderFeedback = (state, i18nInstance) => {
-  const inputURL = document.querySelector('#url-input');
-  const feedback = document.querySelector('p.feedback');
-  const button = document.querySelector('button.btn-primary');
+const renderFeedback = (state, elements, i18nInstance) => {
   switch (state.formStatus) {
     case 'add':
-      inputURL.value = '';
-      feedback.textContent = i18nInstance.t('addURL');
-      feedback.classList.remove('text-danger');
-      feedback.classList.add('text-success');
-      inputURL.classList.remove('is-invalid');
-      button.removeAttribute('disabled');
+      elements.inputURL.value = '';
+      elements.feedback.textContent = i18nInstance.t('addURL');
+      elements.feedback.classList.remove('text-danger');
+      elements.feedback.classList.add('text-success');
+      elements.inputURL.classList.remove('is-invalid');
+      elements.feedbackButton.removeAttribute('disabled');
       return;
     case 'failed':
-      feedback.classList.remove('text-success');
-      feedback.classList.add('text-danger');
-      inputURL.classList.add('is-invalid');
-      button.removeAttribute('disabled');
+      elements.feedback.classList.remove('text-success');
+      elements.feedback.classList.add('text-danger');
+      elements.inputURL.classList.add('is-invalid');
+      elements.feedbackButton.removeAttribute('disabled');
       return;
     case 'loading':
-      button.setAttribute('disabled', true);
+      elements.feedbackButton.setAttribute('disabled', true);
       return;
     default:
       throw new Error('error in state.formStatus - unavaillable status');
   }
 };
 
-const isWatchedLink = (state, id) => !state.uiState.watchedPosts.every((postID) => postID !== id);
+const isWatchedLink = (state, id) => state.uiState.watchedPosts.includes(id);
 
-const getLinkClasses = (state, postData) => (isWatchedLink(state, postData.postID) ? 'fw-normal link-secondary' : 'fw-bold');
+const buildPostElement = (state, postData, i18nInstance) => {
+  const post = document.createElement('li');
+  post.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
+  const link = document.createElement('a');
+  link.className = (isWatchedLink(state, postData.postID) ? 'fw-normal link-secondary' : 'fw-bold');
+  link.href = postData.link;
+  link.textContent = postData.title;
+  link.setAttribute('data-id', postData.postID);
+  link.setAttribute('target', '_blank');
+  link.setAttribute('rel', 'noopener noreferrer');
+  const button = document.createElement('p');
+  button.setAttribute('type', 'button');
+  button.className = 'btn btn-outline-primary btn-sm';
+  button.textContent = i18nInstance.t('buttonText');
+  button.setAttribute('data-id', postData.postID);
+  button.setAttribute('data-bs-toggle', 'modal');
+  button.setAttribute('data-bs-target', '#modal');
+  post.appendChild(link);
+  post.appendChild(button);
+  return post;
+};
 
-const buildPostElement = (state, postData, i18nInstance) => `<li class="list-group-item d-flex justify-content-between 
-  align-items-start border-0 border-end-0">
-  <a href="${postData.link}" class="${getLinkClasses(state, postData)}" data-id="${postData.postID}" target="_blank" rel="noopener noreferrer">${postData.title}</a>
-  <button type="button" class="btn btn-outline-primary btn-sm"data-bs-toggle="modal" data-bs-target="#modal"  data-id="${postData.postID}">
-  ${i18nInstance.t('buttonText')}</button></li>`;
+const buildFeedElement = (feedData) => {
+  const feed = document.createElement('li');
+  feed.className = 'list-group-item border-0 border-end-0';
+  const feedHeader = document.createElement('h3');
+  feedHeader.className = 'h6 m-0';
+  feedHeader.textContent = feedData.title;
+  const feedText = document.createElement('p');
+  feedText.className = 'm-0 small text-black-50';
+  feedText.textContent = feedData.description;
+  feed.appendChild(feedHeader);
+  feed.appendChild(feedText);
+  return feed;
+};
 
-const buildFeedElement = (feedData) => `<li class="list-group-item border-0 border-end-0">
-  <h3 class="h6 m-0">${feedData.title}</h3>
-  <p class="m-0 small text-black-50">${feedData.description}</p>
-  </li>`;
-
-const renderFeeds = (state, i18nInstance) => {
-  const feedList = document.querySelector('#feeds');
-  document.querySelector('#feedTitle').textContent = i18nInstance.t('feedTitle');
-  let feeds = '';
+const renderFeeds = (state, elements, i18nInstance) => {
+  elements.textContent = i18nInstance.t('feedTitle');
+  const fragment = document.createDocumentFragment();
   state.feeds.forEach((feed) => {
-    feeds = `${feeds}${buildFeedElement(feed)}`;
+    fragment.appendChild(buildFeedElement(feed));
   });
-  feedList.innerHTML = '';
-  feedList.insertAdjacentHTML('afterbegin', feeds);
+  elements.feedList.innerHTML = '';
+  elements.feedList.appendChild(fragment);
 };
 
-const renderPosts = (state, i18nInstance) => {
-  const postList = document.querySelector('#posts');
-  document.querySelector('#postTitle').textContent = i18nInstance.t('postTitle');
-  let posts = '';
+const renderPosts = (state, elements, i18nInstance) => {
+  elements.textContent = i18nInstance.t('postTitle');
+  const fragment = document.createDocumentFragment();
   state.posts.forEach((post) => {
-    posts = `${posts}${buildPostElement(state, post, i18nInstance)}`;
+    fragment.appendChild(buildPostElement(state, post, i18nInstance));
   });
-  postList.innerHTML = '';
-  postList.insertAdjacentHTML('afterbegin', posts);
+  elements.postList.innerHTML = '';
+  elements.postList.appendChild(fragment);
 };
 
-const renderModalPost = (state) => {
+const renderModalPost = (state, elements) => {
   const post = state.posts
     .filter((statePost) => statePost.postID === state.uiState.modalPostID)[0];
-  document.querySelector('h5.modal-title').textContent = post.title;
-  document.querySelector('div.modal-body').textContent = post.description;
-  document.querySelector('a.full-article').href = post.link;
+  elements.modal.title.textContent = post.title;
+  elements.modal.text.textContent = post.description;
+  elements.modal.link.href = post.link;
 };
 
-export default (path, watchedState, i18nInstance) => {
+export default (path, watchedState, elements, i18nInstance) => {
   switch (path) {
     case 'formStatus':
-      renderFeedback(watchedState, i18nInstance);
+      renderFeedback(watchedState, elements, i18nInstance);
       break;
     case 'error':
-      renderError(watchedState, i18nInstance);
+      renderError(watchedState, elements, i18nInstance);
       break;
     case 'posts':
     case 'uiState.watchedPosts':
-      renderPosts(watchedState, i18nInstance);
+      renderPosts(watchedState, elements, i18nInstance);
       break;
     case 'feeds':
-      renderFeeds(watchedState, i18nInstance);
+      renderFeeds(watchedState, elements, i18nInstance);
       break;
     case 'uiState.modalPostID':
-      renderModalPost(watchedState);
+      renderModalPost(watchedState, elements);
       break;
     default:
   }

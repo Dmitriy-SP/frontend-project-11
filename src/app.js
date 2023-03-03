@@ -83,15 +83,29 @@ export default () => {
       locales,
   })
     .then(() => {
-      const form = document.querySelector('form');
-      const postsField = document.querySelector('#posts');
+      const elements = {
+        form: document.querySelector('form'),
+        postsField: document.querySelector('#posts'),
+        feedback: document.querySelector('p.feedback'),
+        inputURL: document.querySelector('#url-input'),
+        feedbackButton: document.querySelector('button.btn-primary'),
+        feedList: document.querySelector('#feeds'),
+        feedTitle: document.querySelector('#feedTitle'),
+        postList: document.querySelector('#posts'),
+        postTitle: document.querySelector('#postTitle'),
+        modal: {
+          title: document.querySelector('h5.modal-title'),
+          text: document.querySelector('div.modal-body'),
+          link: document.querySelector('a.full-article'),
+        },
+      };
 
       const watchedState = onChange(
         initialState,
-        (path) => render(path, watchedState, i18nInstance),
+        (path) => render(path, watchedState, elements, i18nInstance),
       );
 
-      form.addEventListener('submit', (e) => {
+      elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
@@ -113,10 +127,10 @@ export default () => {
           });
       });
 
-      postsField.addEventListener('click', (e) => {
+      elements.postsField.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         if (id) {
-          if (watchedState.uiState.watchedPosts.every((watchedPost) => watchedPost.postID !== id)) {
+          if (!watchedState.uiState.watchedPosts.includes(id)) {
             watchedState.uiState.watchedPosts.push(id);
           }
           watchedState.uiState.modalPostID = id;
