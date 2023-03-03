@@ -28,17 +28,15 @@ const loadData = (url, watchedState) => {
       watchedState.error = null;
     })
     .catch((error) => {
+      watchedState.formStatus = 'failed';
       if (error.isAxiosError) {
-        watchedState.formStatus = 'failed';
         watchedState.error = 'networkError';
         return;
       }
       if (error.isParsingError) {
-        watchedState.formStatus = 'failed';
         watchedState.error = 'noRSS';
         return;
       }
-      watchedState.formStatus = 'failed';
       watchedState.error = 'unknownError';
     });
 };
