@@ -4,9 +4,7 @@ import * as yup from 'yup';
 import axios from 'axios';
 import _ from 'lodash';
 import locales from './locales/index.js';
-import {
-  renderFeedback, renderError, renderFeeds, renderPosts, renderModalPost,
-} from './render.js';
+import render from './render.js';
 import parse from './parser.js';
 
 const addProxy = (url) => {
@@ -90,27 +88,10 @@ export default () => {
       const form = document.querySelector('form');
       const postsField = document.querySelector('#posts');
 
-      const watchedState = onChange(initialState, (path) => {
-        switch (path) {
-          case 'formStatus':
-            renderFeedback(watchedState, i18nInstance);
-            break;
-          case 'error':
-            renderError(watchedState, i18nInstance);
-            break;
-          case 'posts':
-          case 'uiState.watchedPosts':
-            renderPosts(watchedState, i18nInstance);
-            break;
-          case 'feeds':
-            renderFeeds(watchedState, i18nInstance);
-            break;
-          case 'uiState.modalPostID':
-            renderModalPost(watchedState);
-            break;
-          default:
-        }
-      });
+      const watchedState = onChange(
+        initialState,
+        (path) => render(path, watchedState, i18nInstance),
+      );
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -120,17 +101,15 @@ export default () => {
         validate(url, watchedState.feeds.map((feed) => feed.link))
           .then(() => loadData(url, watchedState))
           .catch((error) => {
+            watchedState.formStatus = 'failed';
             switch (error.message) {
               case 'unvalid':
-                watchedState.formStatus = 'failed';
                 watchedState.error = 'unvalid';
                 break;
               case 'added':
-                watchedState.formStatus = 'failed';
                 watchedState.error = 'added';
                 break;
               default:
-                watchedState.formStatus = 'failed';
                 watchedState.error = 'unknownError';
             }
           });
@@ -139,9 +118,10 @@ export default () => {
       postsField.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         if (id) {
-          const post = watchedState.posts.filter((statePost) => statePost.postID === id)[0];
-          watchedState.uiState.watchedPosts.push(post.postID);
-          watchedState.uiState.modalPostID = post.postID;
+          if (watchedState.uiState.watchedPosts.every((watchedPost) => watchedPost.postID !== id)) {
+            watchedState.uiState.watchedPosts.push(id);
+          }
+          watchedState.uiState.modalPostID = id;
         }
       });
 

@@ -92,10 +92,24 @@ const renderModalPost = (state) => {
   document.querySelector('a.full-article').href = post.link;
 };
 
-export {
-  renderFeedback,
-  renderError,
-  renderFeeds,
-  renderPosts,
-  renderModalPost,
+export default (path, watchedState, i18nInstance) => {
+  switch (path) {
+    case 'formStatus':
+      renderFeedback(watchedState, i18nInstance);
+      break;
+    case 'error':
+      renderError(watchedState, i18nInstance);
+      break;
+    case 'posts':
+    case 'uiState.watchedPosts':
+      renderPosts(watchedState, i18nInstance);
+      break;
+    case 'feeds':
+      renderFeeds(watchedState, i18nInstance);
+      break;
+    case 'uiState.modalPostID':
+      renderModalPost(watchedState);
+      break;
+    default:
+  }
 };
