@@ -102,8 +102,7 @@ const renderPosts = (state, elements, i18nInstance) => {
 };
 
 const renderModalPost = (state, elements) => {
-  const post = state.posts
-    .filter((statePost) => statePost.postID === state.uiState.modalPostID)[0];
+  const post = state.posts.find((statePost) => statePost.postID === state.uiState.modalPostID);
   elements.modal.title.textContent = post.title;
   elements.modal.text.textContent = post.description;
   elements.modal.link.href = post.link;
