@@ -5,7 +5,7 @@
 <a href="https://codeclimate.com/github/Dmitriy-SP/frontend-project-11/maintainability"><img src="https://api.codeclimate.com/v1/badges/a19e4fcf907f8493a4c1/maintainability" /></a>
 
 Rss Reader is a service for aggregating RSS feeds, with which it is convenient to read sources, such as blogs.<br>
-<a href="https://frontend-project-11-inky.vercel.app/">You can try web-version on vercel.</a>
+<a href="https://rss-reader-c9ski4pxz-dmitriychereha-gmailcom.vercel.app/">You can try web-version.</a>
 
 - [Description](#Description)
 - [Installation](#Installation)
